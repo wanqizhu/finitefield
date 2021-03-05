@@ -19,13 +19,31 @@ class FiniteFieldElem:
     instead of a list of size 1.
     """
     def __init__(self, field, val):
-        pass
+        self.field = field
 
-    """ For printing. Formats an int (m = 1) or a list of coefficients (m > 1).
+        if isinstance(val, int):
+            val = [val]
+
+        if len(val) != self.field.m:
+            raise ValueError(f"Expected {self.field.m} coefficients, got "
+                             + f"{len(val)} ({val}).")
+
+        self.coefs = val
+
+
+    """ For printing. Outputs string of the form
+    [F_32] (1, 0, 0, 1, 1)
     """
-    def __repr__(self):
-        pass
+    def __str__(self):
+        return f"[F_{self.field.q}] ({', '.join(map(str, self.coefs))})"
 
+
+    """ Allows dictionary lookup """
+    def __hash__(self):
+        return hash(str(self))
+
+    def __eq__(self, other):
+        return self.field.q == other.field.q and self.coefs == other.coefs
 
     """
     Arithemetic operations over this field.
@@ -52,7 +70,4 @@ class FiniteFieldElem:
         pass
 
     def __neg__(self):
-        pass
-
-    def __eq__(self, other):
         pass

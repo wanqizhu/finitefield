@@ -1,3 +1,5 @@
+from typing import Union
+from FiniteFieldElem import FiniteFieldElem
 
 class FiniteField:
     """
@@ -6,7 +8,7 @@ class FiniteField:
     in F_p[x] mod g(x), where g is the degree-m primitive polynomial used to 
     construct the field.
 
-    Throws ValueError if incorrect information is specified for the field.
+    Raises ValueError if incorrect information is specified for the field.
 
     @param p:
         prime characteristic of the field
@@ -18,8 +20,23 @@ class FiniteField:
     @param primitive_elem:
         a known primitive element of the field [optional]
     """
-    def __init__(self, p, m=1, primitive_poly=None, primitive_elem=None):
-        pass
+    def __init__(self, p: int, m: int = 1, 
+                 primitive_poly: list[int] = None, 
+                 primitive_elem: list[int] = None):
+        # TODO: verify p is prime
+        if not isinstance(m, int):
+            raise ValueError(f"m must be an integer (got {m})")
+
+        self.p = p
+        self.q = p ** m
+        self.m = m
+        self.primitive_poly = primitive_poly
+        self.primitive_elem = primitive_elem
+        self.log_table = {}
+        self.inverse_log_table = {}
+
+        if primitive_elem:
+            self.build_log_table()
 
 
     """
@@ -33,15 +50,30 @@ class FiniteField:
     is by its log_alpha value (an int), where alpha is the primitive element 
     of this field. If no primitive element is specified for this
     field, then `find_primitive_elem` is called to find one. This primitive
-    element will then be used for future operations in this field.
+    element will then be used for future operations in this field. Note that
+    0 is represented here by -inf.
+
+    Raises ValueError if `value` does not match the specification above.
 
     @param value:
-        a list of size m or an int, uniquely representing the element
+        a list of size m, an int, or -inf, uniquely representing the element
     @return
         a field element
     """
-    def __call__(self, value):
-        pass
+    def __call__(self, value: Union[list[int], int, float]):
+        if self.m > 1 and (isinstance(value, int) or isinstance(value, float)):
+            if not self.primitive_elem:
+                self.find_primitive_elem()
+
+            if value not in self.log_table():
+                raise ValueError("Invalid representation of field element: " +
+                                 f"{value}")
+
+            return self.log_table[value]
+
+        # value must represent coefficients; pass directly to FiniteFieldElem
+        # constructor, which chcecks for errors
+        return FiniteFieldElem(self, value)
 
 
     """
@@ -55,3 +87,36 @@ class FiniteField:
     """
     def find_primitive_elem(self):
         pass
+        self.build_log_table()
+        pass
+
+
+    """
+    Builds a multiplication log table using the primitive element.
+
+    If no primitive element exists, calls `find_primitive_elem()` and uses
+    the result to bulid the table.
+    """
+    def build_log_table(self):
+        if not self.primitive_elem:
+            self.find_primitive_elem()
+
+        self.log_table = {}
+        self.inverse_log_table = {}
+
+        current_multiple = FiniteFieldElem(self, [0] * (self.m - 1) + [1])
+        multiplier = FiniteFieldElem(self, self.primitive_elem)
+
+        for i in range(self.q - 2):
+            self.log_table[i] = current_multiple
+            self.inverse_log_table[current_multiple] = i
+            current_multiple *= multiplier
+
+        # we represent zero as alpha ^ -inf, since then when we multiply
+        # anything with zero, after taking logs we add -inf with some integer
+        # and still get -inf, so we can reverse the log and get back zero
+
+        # python doesn't have integer infinities, so we use float here
+        zero = FiniteFieldElem(self, [0] * self.m)
+        self.log_table[float('-inf')] = zero
+        self.inverse_log_table[zero] = float('-inf')
