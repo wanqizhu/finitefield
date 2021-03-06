@@ -14,9 +14,16 @@ will output 5, which is 3*4 mod 7.
 """
 class FiniteFieldElem:
     """
-    Construct a field element, represented by a list of polynomial coefficients.
+    Construct a field element, represented by a list of polynomial coefficients
+    which are remainder polynomials in F_p[x].
     If field is of prime order (m = 1), then val can also be a single integer,
     instead of a list of size 1.
+
+    Attributes:
+    @self.field: 
+        FiniteField instance this element lives in
+    @self.coefs
+        list of ints of size self.field.m, ranging over [0..p-1]^m
     """
     def __init__(self, field, val):
         self.field = field
@@ -27,6 +34,11 @@ class FiniteFieldElem:
         if len(val) != self.field.m:
             raise ValueError(f"Expected {self.field.m} coefficients, got "
                              + f"{len(val)} ({val}).")
+
+        for i, v in enumerate(val):
+            if not isinstance(v, int):
+                raise TypeError(f"Got non-integer coefficient: {v}.")
+            val[i] = v % self.field.p
 
         self.coefs = val
 
@@ -46,28 +58,36 @@ class FiniteFieldElem:
         return self.field.q == other.field.q and self.coefs == other.coefs
 
     """
-    Arithemetic operations over this field.
+    Arithemetic operations; only defined over elements of the same field
     """
-    def __add__(self, other):
-        pass
+    def check_arith_compatibility(self, other):
+        if not isinstance(other, FiniteFieldElem):
+            raise TypeError("Cannot add FiniteFieldElem with object of type"
+                + f"{type(other)}.")
 
-    def __radd__(self, other):
-        pass
+        if self.field.q != other.field.q:
+            raise ValueError("Cannot add two elements from fields of different "
+                             + f"sizes ({self.field.q} and {other.field.q}).")
+
+    def __add__(self, other):
+        self.check_arith_compatibility(other)
+        new_coefs = [x + y % self.field.p for x, y in zip(self.coefs, other.coefs)]
+        return FiniteFieldElem(self.field, new_coefs)
+
 
     def __sub__(self, other):
-        pass
-
-    def __rsub__(self, other):
-        pass
+        self.check_arith_compatibility(other)
+        new_coefs = [x - y % self.field.p for x, y in zip(self.coefs, other.coefs)]
+        return FiniteFieldElem(self.field, new_coefs)
 
     def __mul__(self, other):
         pass
 
-    def __rmul__(self, other):
+    def __div__(self, other):
         pass
 
     def __pow__(self, other):
         pass
 
     def __neg__(self):
-        pass
+        return FiniteFieldElem(self.field, [-c for c in self.coefs])
