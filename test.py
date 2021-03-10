@@ -1,6 +1,7 @@
 from FiniteField import FiniteField
 from FiniteFieldElem import FiniteFieldElem
-
+from utils import gaussian_elimination
+import numpy as np
 
 F = FiniteField(5)
 print(F(3))
@@ -40,3 +41,30 @@ print(F49([3, 4]) * F49([1, 3]))  # multiply the old fashioned way
 F49.find_primitive_elem()
 print("primitive elem:", F49.primitive_elem)
 print(F49([3, 4]) * F49([1, 3]))  # multiply fast: should be same result
+
+
+
+
+"""
+Testing gaussian elim
+"""
+A = [[2, -1, 0, 1, 0, 0],
+     [-1, 2, -1, 0, 1, 0],
+     [0, -1, 2, 0, 0, 1]]
+
+A_, _ = gaussian_elimination(A)
+assert np.allclose(A_, 
+                   [[1, 0, 0, 3/4, 1/2, 1/4],
+                   [0, 1, 0, 1/2, 1, 1/2],
+                   [0, 0, 1, 1/4, 1/2, 3/4]]), (A, A_)
+
+
+A = [[2, 1, -1, 8],
+    [-3, -1, 2, -11],
+    [-2, 1, 2, -3]]
+
+A_, _ = gaussian_elimination(A)
+assert np.allclose(A_, 
+                   [[1, 0, 0, 2],
+                   [0, 1, 0, 3],
+                   [0, 0, 1, -1]]), (A, A_)

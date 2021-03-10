@@ -64,29 +64,7 @@ class FiniteField:
         if primitive_elem:
             self.build_log_table()
 
-    def has_log_table(self):
-        return self._has_log_table
-
-    def inverse_log(self, v):
-        if not self.has_log_table():
-            raise ValueError("Field does not have a log table. Please call "
-                             + "self.build_log_table() first.")
-
-        if isinstance(v, int):
-            return self._inverse_log_table[v % (self.q - 1)]
-
-        return self._inverse_log_table[v]  # special case for -inf -> Zero
-
-    def log(self, elem):
-        if not self.has_log_table():
-            raise ValueError("Field does not have a log table. Please call "
-                             + "self.build_log_table() first.")
-
-        if elem not in self._log_table:
-            raise ValueError("Invalid field element, cannot compute log.")
-        return self._log_table[elem]
-
-
+    
     """
     Create a representation of an element of this field.
 
@@ -191,3 +169,26 @@ class FiniteField:
         self._log_table[zero] = float('-inf')
         self._inverse_log_table[float('-inf')] = zero
         self._has_log_table = True
+
+    """ Getters for private vars """
+    def has_log_table(self):
+        return self._has_log_table
+
+    def inverse_log(self, v: int):
+        if not self.has_log_table():
+            raise ValueError("Field does not have a log table. Please call "
+                             + "self.build_log_table() first.")
+
+        if isinstance(v, int):
+            return self._inverse_log_table[v % (self.q - 1)]
+
+        return self._inverse_log_table[v]  # special case for -inf -> Zero
+
+    def log(self, elem: FiniteFieldElem):
+        if not self.has_log_table():
+            raise ValueError("Field does not have a log table. Please call "
+                             + "self.build_log_table() first.")
+
+        if elem not in self._log_table:
+            raise ValueError("Invalid field element, cannot compute log.")
+        return self._log_table[elem]

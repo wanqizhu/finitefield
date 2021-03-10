@@ -1,3 +1,6 @@
+from __future__ import annotations  # allow type hints of owning class
+                                    # remove for python 3.10
+
 """
 Each instance of this class represents an element of the Finite Field `field`.
 
@@ -64,30 +67,49 @@ class FiniteFieldElem:
         return self.field.q == other.field.q and self.coefs == other.coefs
 
     """
-    Binary arithemetic operations; only defined over elements of the same field
+    Binary arithemetic operations
+    Addition and subtraction are only defined over elements of the same field.
+    These operations work component-wise, the same way you would add or
+    subtract vectors.
+    Multiplication ideally works with a primitive element,
+    in which case a fast-lookup via log tables are performed. When there's no
+    primitive element, multiplication can be performed directly by multiplying
+    the remainder polynomials and reducing mod g(x) via long division, where
+    g(x) is the prime polynomial of the underlying field. Division only works
+    with a primitive element.
+
+    Multiplication by scalars is equal to repeated addition.
+    Exponentiation by scalars is equal to repeated multiplication.
+    Note that taking an inverse is equal to exponentiation by -1. This works
+    out just fine via the log table.
     """
-    def check_arith_compatibility(self, other):
+    def check_arith_compatibility(self, other, op_str):
         if not isinstance(other, FiniteFieldElem):
-            raise TypeError("Cannot add FiniteFieldElem with object of type"
+            raise TypeError(f"Cannot {op_str} FiniteFieldElem with object of type"
                 + f"{type(other)}.")
 
         if self.field.q != other.field.q:
-            raise ValueError("Cannot add two elements from fields of different "
+            raise ValueError(f"Cannot {op_str} two elements from fields of different "
                              + f"sizes ({self.field.q} and {other.field.q}).")
 
-    def __add__(self, other):
-        self.check_arith_compatibility(other)
+    def __add__(self, other: FiniteFieldElem):
+        self.check_arith_compatibility(other, "add")
         new_coefs = [x + y % self.field.p for x, y in zip(self.coefs, other.coefs)]
         return FiniteFieldElem(self.field, new_coefs)
 
-
-    def __sub__(self, other):
-        self.check_arith_compatibility(other)
+    def __sub__(self, other: FiniteFieldElem):
+        self.check_arith_compatibility(other, "subtract")
         new_coefs = [x - y % self.field.p for x, y in zip(self.coefs, other.coefs)]
         return FiniteFieldElem(self.field, new_coefs)
 
-    def __mul__(self, other):
-        self.check_arith_compatibility(other)
+    def __mul__(self, other: Union[int, FiniteFieldElem]):
+        # case: scalar multiplication
+        if isinstance(other, int):
+            new_coefs = [x * other for x in self.coefs]
+            return FiniteFieldElem(self.field, new_coefs)
+
+
+        self.check_arith_compatibility(other, "multiply")
         if self.field.has_log_table():
             # use log table
             log_self = self.field.log(self)
@@ -125,7 +147,7 @@ class FiniteFieldElem:
 
 
     def __div__(self, other):
-        self.check_arith_compatibility(other)
+        self.check_arith_compatibility(other, "divide")
         if self.field.has_log_table():
             # use log table
             log_self = self.field.log(self)
@@ -142,6 +164,10 @@ class FiniteFieldElem:
 
 
     def __pow__(self, exponent: int):
+        if not isinstance(exponent, int):
+            raise TypeError(f"Cannot raise FiniteFieldElem to exponent "
+                            + f"of type {type(exponent)}.")
+
         if self.field.has_log_table():
             # use log table
             log_self = self.field.log(self)
@@ -150,8 +176,13 @@ class FiniteFieldElem:
         else:
             # compute power the hard way (not very efficient)
             # TODO: repeated squaring?
-            power = self
-            for i in range(exponent-1):
+            # only works for positive exponents
+            if exponent < 0:
+                raise ValueError("Cannot compute inverse of FiniteFieldElem "
+                                 + "over a field with no primitive elements. "
+                                 + "Please call find_primitive_elem() first.")
+            power = FiniteFieldElem(self.field, 1)
+            for i in range(exponent):
                 power *= self
             return power
 

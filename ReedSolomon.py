@@ -1,5 +1,7 @@
 from FiniteField import FiniteField
 from FiniteFieldElem import FiniteFieldElem
+from utils import gaussian_elimination
+
 
 class ReedSolomonCode():
     """ Construct a specific code from the RS code family.
@@ -31,5 +33,7 @@ class ReedSolomonCode():
 
         return [f(a) for a in self.eval_points]
 
+    """ Uses BerkekampWelch algorithm to decode a corrupted
+    codeword with up to (n-k)/2 errors. """
     def decode(self, ciphertext):
         pass
