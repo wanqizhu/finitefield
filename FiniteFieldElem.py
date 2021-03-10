@@ -51,7 +51,7 @@ class FiniteFieldElem:
     """ For printing. Outputs string of the form
     [F_32] (1, 0, 0, 1, 1)
     """
-    def __str__(self):
+    def __repr__(self):
         return f"[F_{self.field.q}] ({', '.join(map(str, self.coefs))})"
 
 
@@ -146,7 +146,7 @@ class FiniteFieldElem:
             return FiniteFieldElem(self.field, new_coefs_modded)
 
 
-    def __div__(self, other):
+    def __truediv__(self, other):
         self.check_arith_compatibility(other, "divide")
         if self.field.has_log_table():
             # use log table
@@ -189,3 +189,6 @@ class FiniteFieldElem:
 
     def __neg__(self):
         return FiniteFieldElem(self.field, [-c for c in self.coefs])
+
+    def __bool__(self):
+        return self != 0

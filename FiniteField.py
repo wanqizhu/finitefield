@@ -12,16 +12,19 @@ class FiniteField:
 
     Raises ValueError if incorrect information is specified for the field.
 
-    @param p:
-        prime characteristic of the field
-    @param m:
-        log_p of the size of the field [default 1]
-    @param primitive_poly:
-        coefficients of the degree m prime polynomial [ignored if m=1,
+    @param p
+        Prime characteristic of the field
+    @param m
+        Log_p of the size of the field [default 1]
+    @param primitive_poly
+        Coefficients of the degree m prime polynomial [ignored if m=1,
         necessary if m > 1]
-    @param primitive_elem:
-        a known primitive element of the field [optional]
-
+    @param primitive_elem
+        A known primitive element of the field [optional]
+    @param find_primite_elem
+        If primitive_elem is None and this variable is True, then we find a
+        primitive element of this field before returning. Do nothing otherwise.
+        [default False]
 
     Attributes:
 
@@ -34,7 +37,8 @@ class FiniteField:
     """
     def __init__(self, p: int, m: int = 1, 
                  primitive_poly: list[int] = None, 
-                 primitive_elem: list[int] = None):
+                 primitive_elem: list[int] = None,
+                 find_primitive_elem: bool = False):
         # TODO: verify p is prime
         if not isinstance(m, int):
             raise ValueError(f"m must be an integer (got {m})")
@@ -61,6 +65,9 @@ class FiniteField:
         self._inverse_log_table = {}
         self._has_log_table = False
 
+        if (not primitive_elem) and find_primitive_elem:
+            self.find_primitive_elem()
+
         if primitive_elem:
             self.build_log_table()
 
@@ -69,34 +76,19 @@ class FiniteField:
     Create a representation of an element of this field.
 
     A field element is usually represented by polynomial 
-    coefficients (a list of size m). For m = 1, it's okay to pass in a single
-    integer instead of a list of size 1.
-
-    An alternative specification, for m > 1, 
-    is by its log_alpha value (an int), where alpha is the primitive element 
-    of this field. If no primitive element is specified for this
-    field, then `find_primitive_elem` is called to find one. This primitive
-    element will then be used for future operations in this field. Note that
-    0 is represented here by -inf.
+    coefficients (a list of size m). For field elements which do not have
+    higher ordered terms (e.g. all elements when m == 1), it's okay to pass 
+    in a single integer instead of a list of size 1.
 
     Raises ValueError if `value` does not match the specification above.
 
     @param value:
-        a list of size m, an int, or -inf, uniquely representing the element
+        a list of size m, or an int uniquely representing the element
     @return
         a field element
     """
     def __call__(self, value: Union[list[int], int, float]):
         try:
-            if self.m > 1 and (isinstance(value, int) or isinstance(value, float)):
-                if not self.primitive_elem:
-                    self.find_primitive_elem()
-
-                return self.inverse_log(value)
-
-
-            # value must represent coefficients; pass directly to FiniteFieldElem
-            # constructor, which chcecks for errors
             return FiniteFieldElem(self, value)
 
         except ValueError:
@@ -155,7 +147,7 @@ class FiniteField:
 
         current_multiple = FiniteFieldElem(self, 1)
 
-        for i in range(self.q - 2):
+        for i in range(self.q - 1):
             self._log_table[current_multiple] = i
             self._inverse_log_table[i] = current_multiple
             current_multiple *= self.primitive_elem
