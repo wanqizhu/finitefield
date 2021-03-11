@@ -78,12 +78,15 @@ class FiniteFieldElem:
     g(x) is the prime polynomial of the underlying field. Division only works
     with a primitive element.
 
-    Multiplication by scalars is equal to repeated addition.
-    Exponentiation by scalars is equal to repeated multiplication.
+    Scalar operations are equivalent to operating with the field element corresponding
+    to that integer
     Note that taking an inverse is equal to exponentiation by -1. This works
     out just fine via the log table.
     """
     def check_arith_compatibility(self, other, op_str):
+        if isinstance(other, int):
+            other = self.field(other)
+
         if not isinstance(other, FiniteFieldElem):
             raise TypeError(f"Cannot {op_str} FiniteFieldElem with object of type"
                 + f"{type(other)}.")
@@ -92,24 +95,26 @@ class FiniteFieldElem:
             raise ValueError(f"Cannot {op_str} two elements from fields of different "
                              + f"sizes ({self.field.q} and {other.field.q}).")
 
-    def __add__(self, other: FiniteFieldElem):
-        self.check_arith_compatibility(other, "add")
+        return other
+
+    def __add__(self, other: Union[int, FiniteFieldElem]):
+        other = self.check_arith_compatibility(other, "add")
         new_coefs = [x + y % self.field.p for x, y in zip(self.coefs, other.coefs)]
         return FiniteFieldElem(self.field, new_coefs)
 
-    def __sub__(self, other: FiniteFieldElem):
-        self.check_arith_compatibility(other, "subtract")
+    def __radd__(self, other: Union[int, FiniteFieldElem]):
+        return self.__add__(other)
+
+    def __sub__(self, other: Union[int, FiniteFieldElem]):
+        other = self.check_arith_compatibility(other, "subtract")
         new_coefs = [x - y % self.field.p for x, y in zip(self.coefs, other.coefs)]
         return FiniteFieldElem(self.field, new_coefs)
 
+    def __rsub__(self, other: Union[int, FiniteFieldElem]):
+        return other + (self * -1)  ## TODO: make this better?
+
     def __mul__(self, other: Union[int, FiniteFieldElem]):
-        # case: scalar multiplication
-        if isinstance(other, int):
-            new_coefs = [x * other for x in self.coefs]
-            return FiniteFieldElem(self.field, new_coefs)
-
-
-        self.check_arith_compatibility(other, "multiply")
+        other = self.check_arith_compatibility(other, "multiply")
         if self.field.has_log_table():
             # use log table
             log_self = self.field.log(self)
@@ -145,6 +150,8 @@ class FiniteFieldElem:
             new_coefs_modded = new_coefs[:m]
             return FiniteFieldElem(self.field, new_coefs_modded)
 
+    def __rmul__(self, other: Union[int, FiniteFieldElem]):
+        return self.__mul__(other)
 
     def __truediv__(self, other):
         self.check_arith_compatibility(other, "divide")

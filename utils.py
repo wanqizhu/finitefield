@@ -100,3 +100,86 @@ def gaussian_elimination(A):
 
 
     return A, final_row_map_to_orig
+
+
+"""
+Solves the exact linear system Ax = b using Gaussian Elimination.
+A should be a n-by-n square matrix and b a 1-by-n vector.
+
+Throws ValueError if there's no solution or if there are multiple solutions.
+"""
+def solve_lin_sys(A, b):
+    num_rows = len(A)
+    if len(b) != num_rows:
+        raise ValueError(f"Unmatched dimension in linear system: {num_rows} and {len(b)}")
+
+    if len(A[0]) != num_rows:
+        raise ValueError("Expected A to be a square matrix.")
+
+    A_aug = [A[i] + [b[i]] for i in range(num_rows)]
+
+    A_reduced, row_map = gaussian_elimination(A_aug)
+
+    solution = [None] * num_rows
+
+    for i in range(num_rows):
+        orig_row = row_map[i]
+        # if there's an unique solution, A_reduced[i][i] should be 1
+        if A_reduced[i][i] == 0:
+            if b[i] == 0:
+                raise ValueError("A is not full rank, no unique solution.")
+            else:
+                raise ValueError("No solution exist for this system.")
+
+        solution[orig_row] = A_reduced[i][-1]
+
+    return solution
+
+
+'''
+Divides f by g.
+Solves the equation
+    f(x) = g(x)q(x) + r(x)
+for some r with degree strictly less than deg(g).
+
+@param f
+    divident polynomial, represented as a list of coefficients (lower degree first)
+@param g
+    divisor polynomial, same format as f
+
+@return
+    (q, r), where q is the quotient polynomial
+    and r is the reminder, same formats as f
+'''
+def poly_div(f, g):
+    n = len(f)
+    k = len(g)
+
+    reminder = f
+    quotient = []
+
+    # each loop iter correspond to one long division step
+    for x_pow in range(n-k, -1, -1):
+        quotient_term = reminder[-1] / g[-1]
+        quotient.append(quotient_term)
+        # multiply g by divisor_term * x^{x_pow}, then
+        # subtract from reminder to get new reminder
+        for i in range(k):
+            reminder[x_pow + i] -= quotient_term * g[i]
+
+        # last term of reminder should be 0 now; trim
+        reminder = reminder[:-1]
+
+    # long division gets back quotient with leading coefficient first
+    quotient = quotient[::-1]
+
+    # trim zeros in reminder
+    while len(reminder) > 0 and reminder[-1] == 0:
+        reminder = reminder[:-1]
+
+    return (quotient, reminder)
+
+
+
+def poly_eval(f, x):
+    return sum([f[i] * x**i for i in range(len(f))])

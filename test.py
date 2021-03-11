@@ -1,6 +1,6 @@
 from FiniteField import FiniteField
 from FiniteFieldElem import FiniteFieldElem
-from utils import gaussian_elimination
+from utils import gaussian_elimination, solve_lin_sys, poly_div
 import numpy as np
 import unittest
 
@@ -100,6 +100,18 @@ class TestMathUtils(unittest.TestCase):
 
 
     # TODO: test above on fields of higher order, using polynomial representations
+
+    # TODO: test solve_lin_sys
+
+    '''
+    5 + 4x + 2x^2 + 3x^3 = (2 + 1x)(12 - 4x + 3x^2) + (-19)
+    '''
+    def test_poly_div(self):
+        f = [5, 4, 2, 3]
+        g = [2, 1]
+        q, r = poly_div(f, g)
+        self.assertEqual(q, [12, -4, 3])
+        self.assertEqual(r[0], -19)
 
 if __name__ == '__main__':
     unittest.main(exit=False)
