@@ -1,5 +1,6 @@
 from FiniteField import FiniteField
 from FiniteFieldElem import FiniteFieldElem
+from ReedSolomon import ReedSolomonCode
 from utils import gaussian_elimination, solve_lin_sys, poly_div
 import numpy as np
 import unittest
@@ -58,7 +59,7 @@ class TestMathUtils(unittest.TestCase):
              [-1, 2, -1, 0, 1, 0],
              [0, -1, 2, 0, 0, 1]]
 
-        A_, _ = gaussian_elimination(A)
+        A_ = gaussian_elimination(A)
         self.assertTrue(np.allclose(A_, 
                        [[1, 0, 0, 3/4, 1/2, 1/4],
                        [0, 1, 0, 1/2, 1, 1/2],
@@ -69,7 +70,7 @@ class TestMathUtils(unittest.TestCase):
             [-3, -1, 2, -11],
             [-2, 1, 2, -3]]
 
-        A_, _ = gaussian_elimination(A)
+        A_ = gaussian_elimination(A)
         self.assertTrue(np.allclose(A_, 
                            [[1, 0, 0, 2],
                            [0, 1, 0, 3],
@@ -88,7 +89,7 @@ class TestMathUtils(unittest.TestCase):
         for i in range(len(A)):
             A[i] = [F(x) for x in A[i]]
 
-        A_, _ = gaussian_elimination(A)
+        A_ = gaussian_elimination(A)
         A_sol = [[1, 0, 0, 4],
                  [0, 1, 0, 0],
                  [0, 0, 1, 1]]
@@ -112,6 +113,53 @@ class TestMathUtils(unittest.TestCase):
         q, r = poly_div(f, g)
         self.assertEqual(q, [12, -4, 3])
         self.assertEqual(r[0], -19)
+
+
+
+class TestRSCode(unittest.TestCase):
+    def test_F113_max_error(self):
+        F = FiniteField(113, find_primitive_elem = True)
+        eval_points = list(map(F, range(1, 17)))
+        n = 16
+        k = 8
+
+        RS = ReedSolomonCode(F, n, k, eval_points)
+
+        m3 = list(map(F, [3, 4, 5, 6, 7, 8, 9, 10]))
+        c3 = RS.encode(m3)
+        c3_decoded = RS.decode(c3)
+        self.assertEqual(m3, c3_decoded)
+        # add random errors, up to the max decoding capacity (4)
+        c3[3] += F(2)
+        c3[6] += F(13)
+        c3[7] += F(21)
+        c3[11] += F(88)
+        c3_err_decoded = RS.decode(c3)
+        self.assertEqual(m3, c3_err_decoded)
+
+
+
+    def test_F7_zero_msg(self):
+        F = FiniteField(7, find_primitive_elem = True)
+        eval_points = list(map(F, range(1, 5)))
+        n = 4
+        k = 2
+
+        RS = ReedSolomonCode(F, n, k, eval_points)
+        m1 = list(map(F, [0, 0]))
+        c1 = RS.encode(m1)
+        c1_decoded = RS.decode(c1)
+        self.assertEqual(m1, c1_decoded)
+        # add random error
+        c1[3] = F(2)
+        c1_err_decoded = RS.decode(c1)
+        self.assertEqual(m1, c1_err_decoded)
+        c1[3] = F(0)
+        c1[1] = F(4)
+        c1_err_decoded = RS.decode(c1)
+        self.assertEqual(m1, c1_err_decoded)
+        
+
 
 if __name__ == '__main__':
     unittest.main(exit=False)

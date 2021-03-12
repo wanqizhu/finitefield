@@ -11,10 +11,7 @@ rows/columns as possible.
     Input matrix, of any dimension
 
 @return
-    (A', row_map), where A' is the reduced row echelon form
-    of A, and row_map is a dictionary giving us the row permutations.
-    In particular, row_map[i] = j means that A'[i] was originally
-    in row j of A. This is useful for solving systems of linear equations.
+    A', input matrix transformed to reduced row echelon form
 
 """
 def gaussian_elimination(A):
@@ -23,8 +20,6 @@ def gaussian_elimination(A):
     
     r = 0
     c = 0
-
-    final_row_map_to_orig = dict([(i, i) for i in range(num_rows)])
 
     # forward scan, creating matrix in row echelon form
     while r < num_rows and c < num_cols:
@@ -35,9 +30,9 @@ def gaussian_elimination(A):
         # find the nonzero entry
         pivot_row = r
         pivot = A[pivot_row][c]
-        while pivot == 0 and pivot_row < num_rows:
-            pivot = A[pivot_row][c]
+        while pivot == 0 and pivot_row < num_rows - 1:
             pivot_row += 1
+            pivot = A[pivot_row][c]
         if pivot == 0:
             # column c is entirely of zeros; move to next col
             c += 1
@@ -47,14 +42,9 @@ def gaussian_elimination(A):
             A[r] = A[pivot_row]
             A[pivot_row] = tmp
 
-            tmp = final_row_map_to_orig[pivot_row]
-            final_row_map_to_orig[pivot_row] = final_row_map_to_orig[r]
-            final_row_map_to_orig[r] = tmp
-
             # reduce
             # for each i>r, subtract a multiplier of row r
             #   onto row i, making A[i][c] == 0
-            pivot_elem = A[r][c]
             for i in range(r+1, num_rows):
                 if A[i][c] == 0:
                     continue
@@ -82,9 +72,9 @@ def gaussian_elimination(A):
     while r >= 0 and c >= 0:
         i = r
         last_non_zero = A[i][c]
-        while i >= 0 and last_non_zero == 0:
-            last_non_zero = A[i][c]
+        while i > 0 and last_non_zero == 0:
             i -= 1
+            last_non_zero = A[i][c]
         if last_non_zero == 0:
             c -= 1  # go to next column
         else:
@@ -99,7 +89,7 @@ def gaussian_elimination(A):
             c -= 1
 
 
-    return A, final_row_map_to_orig
+    return A
 
 
 """
@@ -118,20 +108,22 @@ def solve_lin_sys(A, b):
 
     A_aug = [A[i] + [b[i]] for i in range(num_rows)]
 
-    A_reduced, row_map = gaussian_elimination(A_aug)
+    A_reduced = gaussian_elimination(A_aug)
 
     solution = [None] * num_rows
 
     for i in range(num_rows):
-        orig_row = row_map[i]
         # if there's an unique solution, A_reduced[i][i] should be 1
         if A_reduced[i][i] == 0:
             if b[i] == 0:
                 raise ValueError("A is not full rank, no unique solution.")
             else:
                 raise ValueError("No solution exist for this system.")
+        if A_reduced[i][i] != 1:
+            raise ValueError("Unknown error happened, corrupted result from "
+                             + "Gaussian Elimination.")
 
-        solution[orig_row] = A_reduced[i][-1]
+        solution[i] = A_reduced[i][-1]
 
     return solution
 
@@ -180,6 +172,21 @@ def poly_div(f, g):
     return (quotient, reminder)
 
 
-
+''' Evaluate f(x). '''
 def poly_eval(f, x):
     return sum([f[i] * x**i for i in range(len(f))])
+
+
+''' Given a list of n points x, y,
+finds the unique polynomial f of degree n-1 
+such that f(x_i) = y_i '''
+def poly_interpolate(X, Y):
+    n = len(X)
+    if len(Y) != n:
+        raise ValueError("Expected X, Y to be of the same length.")
+
+    # f(x_i) = y_i gives us a set of n linear equations
+    A = [[X[i]**j for j in range(n)] for i in range(n)]
+    b = Y
+    f = solve_lin_sys(A, b)
+    return f
