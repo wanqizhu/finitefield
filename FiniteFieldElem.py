@@ -18,7 +18,8 @@ will output 5, which is 3*4 mod 7.
 class FiniteFieldElem:
     """
     Construct a field element, represented by a list of polynomial coefficients
-    which are remainder polynomials in F_p[x].
+    which are remainder polynomials in F_p[x], ordered from the lowest power
+    of x (x^0) to the highest (x^(m-1)).
 
     @param field
         FiniteField instance this element lives in

@@ -7,7 +7,7 @@ import unittest
 
 class TestFiniteFields(unittest.TestCase):
     def test_field_construction(self):
-        F = FiniteField(5)
+        F = FiniteField(5, find_primitive_elem = False)
         self.assertEqual(F(3).coefs, [3])
         self.assertEqual(F(-3), F([7]))  # check mod works, check both int and
                                          # list constructors work for field elem
@@ -20,7 +20,7 @@ class TestFiniteFields(unittest.TestCase):
     1 + x + x^2 is a primitive polynomial over GF(2)
     """
     def test_nonprime_field_f4_arith(self):
-        F4 = FiniteField(2, 2, [1, 1, 1])
+        F4 = FiniteField(2, 2, [1, 1, 1], find_primitive_elem = False)
         one_plus_x = F4([1, 3])
         x = F4([6, -1])
         one = F4([1, 0])
@@ -37,7 +37,7 @@ class TestFiniteFields(unittest.TestCase):
     1 + x^2 is a prime polynomial for any p == 3 mod 4
     """
     def test_prim_elem_generation_f49(self):
-        F49 = FiniteField(7, 2, [1, 0, 1])
+        F49 = FiniteField(7, 2, [1, 0, 1], find_primitive_elem = True)
         self.assertEqual(F49([3, 4]) * F49([1, 3]),  # multiply the old fashioned way
                          F49([5, 6]))
 
@@ -81,7 +81,7 @@ class TestMathUtils(unittest.TestCase):
     Same operations, over modular field
     """
     def test_gaussian_elim_f5(self):
-        F = FiniteField(5, find_primitive_elem = True)
+        F = FiniteField(5)
         A = [[2, -1, 0, 3],
              [-1, 2, -1, 0],
              [0, -1, 2, 2]]
@@ -118,7 +118,7 @@ class TestMathUtils(unittest.TestCase):
 
 class TestRSCode(unittest.TestCase):
     def test_F113_max_error(self):
-        F = FiniteField(113, find_primitive_elem = True)
+        F = FiniteField(113)
         eval_points = list(map(F, range(1, 17)))
         n = 16
         k = 8
@@ -140,7 +140,7 @@ class TestRSCode(unittest.TestCase):
 
 
     def test_F7_zero_msg(self):
-        F = FiniteField(7, find_primitive_elem = True)
+        F = FiniteField(7)
         eval_points = list(map(F, range(1, 5)))
         n = 4
         k = 2

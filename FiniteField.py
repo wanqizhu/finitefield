@@ -19,26 +19,24 @@ class FiniteField:
     @param primitive_poly
         Coefficients of the degree m prime polynomial [ignored if m=1,
         necessary if m > 1]
-    @param primitive_elem
-        A known primitive element of the field [optional]
     @param find_primite_elem
-        If primitive_elem is None and this variable is True, then we find a
-        primitive element of this field before returning. Do nothing otherwise.
-        [default False]
+        Whether to find a primitive element of this field.
+        This makes multiplication faster and enables division. [default True]
 
     Attributes:
 
-    log_table
-        mapping from field elements to int; Zero maps to -inf
+    _log_table
+        Mapping from field elements to int; Zero maps to -inf
         log_table[elem] = i means that primitive_elem ^ i = elem 
     _inverse_log_table
-        inverse mapping, from integer powers of primitive element to field elem
+        Inverse mapping, from integer powers of primitive element to field elem
+    _has_log_table
+        True if the log table & its inverse are constructed
 
     """
     def __init__(self, p: int, m: int = 1, 
-                 primitive_poly: list[int] = None, 
-                 primitive_elem: list[int] = None,
-                 find_primitive_elem: bool = False):
+                 primitive_poly: list[int] = None,
+                 find_primitive_elem: bool = True):
         # TODO: verify p is prime
         if not isinstance(m, int):
             raise ValueError(f"m must be an integer (got {m})")
@@ -60,32 +58,30 @@ class FiniteField:
         self.q = p ** m
         self.m = m
         self.primitive_poly = primitive_poly
-        self.primitive_elem = primitive_elem
+        self.primitive_elem = None
         self._log_table = {}
         self._inverse_log_table = {}
         self._has_log_table = False
 
-        if (not primitive_elem) and find_primitive_elem:
+        if find_primitive_elem:
             self.find_primitive_elem()
-
-        if primitive_elem:
-            self.build_log_table()
 
     
     """
     Create a representation of an element of this field.
 
     A field element is usually represented by polynomial 
-    coefficients (a list of size m). For field elements which do not have
-    higher ordered terms (e.g. all elements when m == 1), it's okay to pass 
+    coefficients (a list of size m), starting from the lowest ordered term.
+    For field elements which do not have higher ordered terms 
+    (e.g. all elements when m == 1), it's okay to pass 
     in a single integer instead of a list of size 1.
 
     Raises ValueError if `value` does not match the specification above.
 
     @param value:
-        a list of size m, or an int uniquely representing the element
+        A list of size m, or an int uniquely representing the element
     @return
-        a field element
+        A field element
     """
     def __call__(self, value: Union[list[int], int, float]):
         try:
@@ -99,12 +95,15 @@ class FiniteField:
     Finds a primitive element and construct the multiplication log table.
     If a primitive element already exists, do nothing.
     
-    This function searches randomly, so it may run for a long time if the field
-    order is large.
+    This function searches iteratively over all field elements, so it may run 
+    for O(q) time, where q is the size of the field.
 
-    @return: the primitive element of this field
+    @return: The primitive element of this field
     """
     def find_primitive_elem(self):
+        if self.primitive_elem:
+            return self.primitive_elem
+
         order_of_elems = {}
         for coefs in itertools.product(range(self.p), repeat = self.m):
             elem = FiniteFieldElem(self, coefs)
@@ -128,39 +127,8 @@ class FiniteField:
             for elem in generated_elems:
                 order_of_elems[elem] = order
 
-        self.build_log_table()
-
-
-    """
-    Builds a multiplication log table using the primitive element.
-
-    If no primitive element exists, calls `find_primitive_elem()` and uses
-    the result to bulid the table.
-    """
-    def build_log_table(self):
-        if not self.primitive_elem:
-            self.find_primitive_elem()
-
-        self._log_table = {}
-        self._inverse_log_table = {}
-        self._has_log_table = False
-
-        current_multiple = FiniteFieldElem(self, 1)
-
-        for i in range(self.q - 1):
-            self._log_table[current_multiple] = i
-            self._inverse_log_table[i] = current_multiple
-            current_multiple *= self.primitive_elem
-
-        # we represent zero as alpha ^ -inf, since then when we multiply
-        # anything with zero, after taking logs we add -inf with some integer
-        # and still get -inf, so we can reverse the log and get back zero
-
-        # python doesn't have integer infinities, so we use float here
-        zero = FiniteFieldElem(self, 0)
-        self._log_table[zero] = float('-inf')
-        self._inverse_log_table[float('-inf')] = zero
-        self._has_log_table = True
+        self._build_log_table()
+        return self.primitive_elem
 
     """ Getters for private vars """
     def has_log_table(self):
@@ -184,3 +152,39 @@ class FiniteField:
         if elem not in self._log_table:
             raise ValueError("Invalid field element, cannot compute log.")
         return self._log_table[elem]
+
+
+    #### 
+    # Private functions
+    ####
+
+    """
+    Builds a multiplication log table using the primitive element.
+
+    Raises ValueError if called without a primitive element.
+    """
+    def _build_log_table(self):
+        if not self.primitive_elem:
+            raise ValueError("Internal function 'build_log_table' called without"
+                             + " first finding a primitive element.")
+
+        self._log_table = {}
+        self._inverse_log_table = {}
+        self._has_log_table = False
+
+        current_multiple = FiniteFieldElem(self, 1)
+
+        for i in range(self.q - 1):
+            self._log_table[current_multiple] = i
+            self._inverse_log_table[i] = current_multiple
+            current_multiple *= self.primitive_elem
+
+        # we represent zero as alpha ^ -inf, since when we multiply
+        # anything with zero, after taking logs we add -inf with some integer
+        # and still get -inf, so we can reverse the log and get back zero
+
+        # python doesn't have integer infinities, so we use float here
+        zero = FiniteFieldElem(self, 0)
+        self._log_table[zero] = float('-inf')
+        self._inverse_log_table[float('-inf')] = zero
+        self._has_log_table = True

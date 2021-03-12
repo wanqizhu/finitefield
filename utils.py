@@ -94,9 +94,17 @@ def gaussian_elimination(A):
 
 """
 Solves the exact linear system Ax = b using Gaussian Elimination.
-A should be a n-by-n square matrix and b a 1-by-n vector.
+A should be a n-by-n square matrix and b a 1-by-n vector. Elements in A and b
+need to support arithmetic operations (+, *, /) with each other.
 
 Throws ValueError if there's no solution or if there are multiple solutions.
+
+@param A
+    Matrix of dimension n x n, specifying n linear constraints
+@param b
+    Vector of dimension n, specfying the constant term of each constraint
+@return
+    Unique solution x of dimension n, such that A*x = b
 """
 def solve_lin_sys(A, b):
     num_rows = len(A)
@@ -135,9 +143,9 @@ Solves the equation
 for some r with degree strictly less than deg(g).
 
 @param f
-    divident polynomial, represented as a list of coefficients (lower degree first)
+    Divident polynomial, represented as a list of coefficients (lower degree first)
 @param g
-    divisor polynomial, same format as f
+    Divisor polynomial, same format as f
 
 @return
     (q, r), where q is the quotient polynomial
@@ -172,15 +180,34 @@ def poly_div(f, g):
     return (quotient, reminder)
 
 
-''' Evaluate f(x). '''
+''' Evaluate f(x).
+
+@param f
+    Coefficients of the polynomial, with the lowest ordered term first
+@param x
+    Point at which to evaluate the polynomial
+
+@return
+    Result f(x)
+
+'''
 def poly_eval(f, x):
     return sum([f[i] * x**i for i in range(len(f))])
 
 
 ''' Given a list of n points x, y,
-finds the unique polynomial f of degree n-1 
-such that f(x_i) = y_i '''
-def poly_interpolate(X, Y):
+finds the unique polynomial f of degree n-1 such that f(x_i) = y_i for all i.
+
+@param X
+    List of n evaluation points
+@param Y
+    List of n values
+
+@return
+    List of n coefficients, representing the polynomial f with lowest ordered
+    term first, such that f(X_i) = Y_i for all i.
+'''
+def poly_interpolation(X, Y):
     n = len(X)
     if len(Y) != n:
         raise ValueError("Expected X, Y to be of the same length.")
