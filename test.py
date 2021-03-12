@@ -1,5 +1,4 @@
 from FiniteField import FiniteField
-from FiniteFieldElem import FiniteFieldElem
 from ReedSolomon import ReedSolomonCode
 from utils import gaussian_elimination, solve_lin_sys, poly_div
 import numpy as np

@@ -1,5 +1,4 @@
-from FiniteField import FiniteField
-from FiniteFieldElem import FiniteFieldElem
+from FiniteField import FiniteField, FiniteFieldElem
 from utils import gaussian_elimination, solve_lin_sys, poly_div, poly_eval
 import sys
 
@@ -15,6 +14,9 @@ class ReedSolomonCode():
         if len(eval_points) != n:
             raise ValueError("Expected eval_points to be length "
                              + f"{n}, got {len(eval_points)}.")
+
+        if n > self.field.q:
+            raise ValueError("Cannot have n > q in Reed Solomon code.")
 
         self.field = field
         self.n = n
@@ -37,7 +39,7 @@ class ReedSolomonCode():
 
     """ Uses BerkekampWelch algorithm to decode a corrupted
     codeword with up to (n-k)/2 errors. """
-    def decode(self, ciphertext):
+    def decode(self, ciphertext: list[FiniteFieldElem]):
         max_num_errors = (self.n - self.k)//2
 
         for e in range(max_num_errors, -1, -1):
