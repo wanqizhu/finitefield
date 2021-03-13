@@ -1,20 +1,19 @@
-# Finite Field for Error Correcting Codes
+# General Purpose Finite Field Module
 
-This project implements a generic FiniteField class, supporting Galois fields
-of any (prime powered) size. As an example for how one might use this class for
-Error Correcting Codes (ECC), we provide a sample implementation of the Reed
-Solomon code, using the Berlekamp Welch algorithm as an encoder.
+The main contribution of this project is a generic FiniteField class in Python,
+supporting Galois fields of any (prime powered) size.
 
-While correct functionality is necessary, the goal of this project is to build
-general purpose, well-decomposed classes that are easy to use and modify. In
-particular, the Finite Field class has no knowledge or dependency on how it is
-to be used. One can easily substitute in other ECC implementations or other
-mathematical uses on top of the Finite Field module.
+The main design principles are:
+- Build general-purpose, well-decomposed classes that are easy to use and modify
+- Hide complexity behind an intuitive and well-documented interface
+- Have minimal dependencies
 
-Lastly, this project has zero dependencies. While using packages such as
-`numpy` would simplify some implementation, we designed the classes so that
-they are completely self-contained. This allows greater customization for users
-who want to completely understand or modify the internal implementations.
+In particular, while we provide an implementation of the Reed Solomon Code and
+various math utility functions that operate over the FiniteField class, all of
+them operate without any assumptions about the inner workings of the
+FiniteField class. Similarly, the FiniteField class is built so that it does
+not have to make assumptions about how it will be use. We believe this is the
+key toward achieving the design principles listed above.
 
 
 # Design Overview
@@ -39,6 +38,7 @@ create field elements (see the FiniteFieldElem class below):
 
 ```
 print(F5(3))  # just the number 3, in the context of the integers mod 5
+# you can directly do arithmetic on field elements
 assert F5(2) + F5(4) == F5(1)  # 2 + 4 == 1 mod 5
 
 # each element of F_{49} is a remainder polynomial of degree < 2 in F_7[x]

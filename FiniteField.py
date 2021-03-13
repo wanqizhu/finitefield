@@ -396,3 +396,6 @@ class FiniteFieldElem:
 
     def __bool__(self):
         return self != 0
+
+F = FiniteField(2, 3, [1, 1, 0, 1])
+print(F.primitive_elem)

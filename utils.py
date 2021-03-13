@@ -110,14 +110,11 @@ def solve_lin_sys(A, b):
     num_rows = len(A)
     if len(b) != num_rows:
         raise ValueError(f"Unmatched dimension in linear system: {num_rows} and {len(b)}")
-
     if len(A[0]) != num_rows:
         raise ValueError("Expected A to be a square matrix.")
 
     A_aug = [A[i] + [b[i]] for i in range(num_rows)]
-
     A_reduced = gaussian_elimination(A_aug)
-
     solution = [None] * num_rows
 
     for i in range(num_rows):
