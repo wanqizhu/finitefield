@@ -1,7 +1,7 @@
 from FiniteField import FiniteField, FiniteFieldElem
 from utils import gaussian_elimination, solve_lin_sys, poly_div, poly_eval
 import sys
-
+import warnings
 
 class ReedSolomonCode():
     """ Construct a specific code from the RS code family.
@@ -69,16 +69,11 @@ class ReedSolomonCode():
             A = [gen_row(i) for i in range(m)]
             b = [-ciphertext[i] * self.eval_points[i]**e for i in range(m)]
 
-            # print("Trying to solve: A: ", A, "b:", b)
-
             try:
                 x = solve_lin_sys(A, b)
             except ValueError:
-                # print(f"No solution found for e={e}, trying again...")
-                # print(sys.exc_info())
+                warnings.warn(f"No solution found for e={e}, trying again...")
                 continue
-
-            # print("Lin System Solution:", x)
 
             E = x[:e] + [self.field(1)]
             Q = x[e:]
@@ -89,14 +84,6 @@ class ReedSolomonCode():
                                  + " divide Q. "
                                  + "Q: {Q}, E: {E}, f: {f}, r: {r}")
 
-            # print("Found polynomial:", f)
-
-            # codeword = [poly_eval(f, eval_point) 
-            #             for eval_point in self.eval_points]
-
-            # print("Decoded codeword:", codeword)
-            # print("Number of errors:", sum([c != m for c,m in zip(codeword, ciphertext)]))
-            
             return f
 
 

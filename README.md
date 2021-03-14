@@ -15,6 +15,8 @@ FiniteField class. Similarly, the FiniteField class is built so that it does
 not have to make assumptions about how it will be use. We believe this is the
 key toward achieving the design principles listed above.
 
+This project is heavily inspired by John Ousterhout's book, A Philosophy of Software Design, and his [CS 190](http://cs190.stanford.edu/) class at Stanford, Software Design Studio.
+
 
 # Design Overview
 
@@ -24,12 +26,12 @@ We provide the following classes:
 Construct a finite field of a given order. For prime ordered fields, the field
 elements are simply the integers `0` to `p-1`, with addition and multiplication
 mod p. For fields of order `p^m` for `m > 1`, construction requires passing in
-a primitive polynomial `g`, and the field elements are the polynomial
-remainders `F_p[x] mod g`.
+an irreducible polynomial `g(x)`, and the field elements are the polynomial
+remainders `F_p[x] mod g(x)`.
 
 ```
 F5 = FiniteField(5)                 # order 5 
-F49 = FiniteField(7, 2, [1, 0, 1])  # order 7^2 = 49, with primitive polynomial
+F49 = FiniteField(7, 2, [1, 0, 1])  # order 7^2 = 49, with irreducible polynomial
                                     # 1 + x^2 (1 + 0 x + 1 x^2)
 ```
 
@@ -61,8 +63,8 @@ constructor.
 
 ### [FiniteFieldElem](FiniteField.py#L200)
 Internal class representing a field element. Rather than creating an instance
-of this class directly, it is recommended to use the field as a function call,
-as shown in the example above.
+of this class directly, it is recommended to use the FiniteField class as a
+function call, as shown in the example above.
 
 This class overwrites the arithmetic operators `+, -, *, /`. These operators
 are defined over two elements of the same field. You can also directly operate with an integer, in which case the integer is interpretted as a field element with all higher ordered terms set to `0`.
@@ -70,14 +72,21 @@ are defined over two elements of the same field. You can also directly operate w
 
 ### [ReedSolomon](ReedSolomon.py)
 
-This class gives a working example for how one might use the FiniteField class.
+This class gives a working example for an application of finite fields.
 In particular, we implement the Reed Solomon code, an Error Correcting Code
 that achives the Singleton Bound and is widely used in practice.
+
+```
+RS = ReedSolomon(field, n, k, eval_points)
+ciphertext = RS.encode(msg)  # msg is a list of k field elements
+plaintext = RS.decode(ciphertext_with_errors)  # decodes from F_q^n -> F_q^k
+```
+
 
 Note that this implementation requires no knowledge about the internal workings
 of the FiniteField or FiniteFieldElem class. The only requirement is that the
 message to be encoded or decoded are given as lists of field elements, and that
-those field elements support arithmetic operators. This demonstrates the
+those field elements support arithmetic operations. This demonstrates the
 decomposability and general-purposeness of our design.
 
 -----
@@ -86,7 +95,7 @@ In addition, we provide a library of general-purpose helper math functions,
 such as Gaussian Elimination and Polynomial Interpolation, in
 [utils.py](utils.py). These functions operate over any data type that supports
 basic arithmetic `(+, -, *, /)`, so one can use them over the reals, over
-FiniteFieldElems, and over any alternative field implementations.
+FiniteFieldElems, and over any other number-like objects.
 
 # Testing
 
